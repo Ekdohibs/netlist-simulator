@@ -294,6 +294,14 @@ let read_inputs p locations ff =
 	  Format.fprintf ff "%s = (%s << 1) | (getchar() & 1);\n" id id
 	done;
      ) p.p_inputs
+  | 2 -> List.iter (fun id ->
+	let size = ident_length p id in
+	let k = (size - 1) / 8 in
+	Format.fprintf ff "%s = getchar();\n" id;
+	for i = 0 to k - 1 do
+	  Format.fprintf ff "%s = (%s << 8) | getchar();\n" id id
+	done;
+     ) p.p_inputs
   | _ -> failwith "invalid io mode"
 
 let print_outputs p locations ff =
@@ -305,6 +313,13 @@ let print_outputs p locations ff =
 	let a = Hashtbl.find locations id in
 	for i = 0 to size - 1 do
 	  Format.fprintf ff "putchar('0' | ((%s >> %d) & 1));\n" a.varname (a.start_pos + a.length - i - 1);
+	done;
+    ) p.p_outputs
+  | 2 -> List.iter (fun id -> 
+	let size = ident_length p id in
+	let k = (size - 1) / 8 in
+	for i = k downto 0 do
+	  Format.fprintf ff "putchar((%s >> %d) & 255);\n" (compile_arg locations (i = k) (Avar id)) (8 * i);
 	done;
     ) p.p_outputs
   | _ -> failwith "invalid io mode"
